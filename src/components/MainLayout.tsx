@@ -9,33 +9,43 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/store/useAppStore';
 import { Node } from '@xyflow/react';
-import { 
-  Terminal, 
-  Sparkles, 
-  Play, 
-  Save, 
+import {
+  Terminal,
+  Sparkles,
+  Play,
+  Save,
   Share,
   Settings,
   Menu,
-  Maximize2
+  Maximize2,
+  Pause
 } from 'lucide-react';
 
 export const MainLayout = () => {
-  const { 
-    mode, 
-    setMode, 
-    code, 
-    setCode, 
-    language, 
-    nodes, 
+  const {
+    mode,
+    setMode,
+    code,
+    setCode,
+    language,
+    nodes,
     setNodes,
     executeCode,
-    isLogsOpen
+    isLogsOpen,
+    codeStatus,
+    setCodeStatus
   } = useAppStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isRunning = codeStatus === 'executing';
 
-  const handleNodeChange = (newNodes: Node[]) => {
-    setNodes(newNodes);
+  const handleNodeChange = (newNodes: Node[]) => { setNodes(newNodes) };
+
+  const handleRun = async () => {
+    await executeCode();
+  };
+
+  const handleSave = () => {
+    setCodeStatus('saved');
   };
 
   return (
@@ -54,9 +64,9 @@ export const MainLayout = () => {
                 <p className="text-xs text-muted-foreground">Custom Cursor.ai</p>
               </div>
             </div>
-            
+
             <div className="h-6 w-px bg-border" />
-            
+
             <ModeToggle mode={mode} onModeChange={setMode} />
           </div>
 
@@ -80,17 +90,27 @@ export const MainLayout = () => {
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-              onClick={executeCode}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-xs ${isRunning ? 'text-red-600' : ''}`}
+              onClick={handleRun}
+              disabled={isRunning}
             >
-              <Play className="h-3 w-3 mr-1" />
+              {isRunning ? (
+                <Pause className="h-3 w-3 mr-1 text-red-600" />
+              ) : (
+                <Play className="h-3 w-3 mr-1" />
+              )}
               Run
             </Button>
-            <Button variant="ghost" size="sm" className="text-xs">
-              <Save className="h-3 w-3 mr-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSave}
+              disabled={codeStatus === 'saved'}
+            >
+              <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
             <Button variant="ghost" size="sm" className="text-xs">
@@ -100,9 +120,9 @@ export const MainLayout = () => {
             <Button variant="ghost" size="sm" className="text-xs">
               <Settings className="h-3 w-3" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsFullscreen(!isFullscreen)}
               className="text-xs"
             >

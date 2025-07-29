@@ -13,19 +13,9 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
   const { codeStatus, setCodeStatus, executeCode, setLogsOpen } = useAppStore();
-  
-  const isRunning = codeStatus === 'executing';
 
   const handleEditorChange = (value: string | undefined) => {
     onChange(value || '');
-  };
-
-  const handleRun = async () => {
-    await executeCode();
-  };
-
-  const handleSave = () => {
-    setCodeStatus('saved');
   };
 
   const getStatusColor = () => {
@@ -76,25 +66,6 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRun}
-            disabled={isRunning}
-            className="text-primary hover:text-primary-glow"
-          >
-            <Play className="h-4 w-4 mr-2" />
-            {isRunning ? 'Running...' : 'Run'}
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleSave}
-            disabled={codeStatus === 'saved'}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save
-          </Button>
           <Button variant="ghost" size="sm">
             <Settings className="h-4 w-4" />
           </Button>
@@ -116,7 +87,7 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
             roundedSelection: false,
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            // minimap: { enabled: false },
+            minimap: { enabled: false },
             wordWrap: 'on',
             tabSize: 2,
             insertSpaces: true,
