@@ -65,11 +65,6 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
       {/* Monaco Editor */}

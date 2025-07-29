@@ -23,22 +23,24 @@ interface AppState {
   // Mode and UI state
   mode: 'code' | 'visual';
   isLogsOpen: boolean;
-  
+
   // Code editor state
   code: string;
   language: string;
   codeStatus: CodeStatus;
-  
+  handleHotkey: (combo: string) => void;
+
+
   // Visual flow state
   nodes: Node[];
   edges: Edge[];
-  
+
   // Chat state
   messages: Message[];
-  
+
   // Logs state
   logs: LogEntry[];
-  
+
   // Actions
   setMode: (mode: 'code' | 'visual') => void;
   setCode: (code: string) => void;
@@ -84,23 +86,37 @@ console.log(user);`,
       edges: [],
       messages: [],
       logs: [],
-      
+
       // Actions
+      handleHotkey: (combo: string) => {
+        const { executeCode, setCodeStatus, codeStatus } = get();
+
+        if (combo === 'ctrl+s') {
+          if (codeStatus !== 'saved') {
+            setCodeStatus('saved');
+          }
+        }
+
+        if (combo === 'ctrl+r') {
+          executeCode();
+        }
+      },
+
       setMode: (mode) => set({ mode }),
-      
-      setCode: (code) => set({ 
-        code, 
-        codeStatus: 'draft' 
+
+      setCode: (code) => set({
+        code,
+        codeStatus: 'draft'
       }),
-      
+
       setLanguage: (language) => set({ language }),
-      
+
       setCodeStatus: (codeStatus) => set({ codeStatus }),
-      
+
       setNodes: (nodes) => set({ nodes }),
-      
+
       setEdges: (edges) => set({ edges }),
-      
+
       addMessage: (message) => set((state) => ({
         messages: [...state.messages, {
           ...message,
@@ -108,7 +124,7 @@ console.log(user);`,
           timestamp: new Date()
         }]
       })),
-      
+
       addLog: (log) => set((state) => ({
         logs: [...state.logs, {
           ...log,
@@ -116,26 +132,26 @@ console.log(user);`,
           timestamp: new Date()
         }]
       })),
-      
+
       clearLogs: () => set({ logs: [] }),
-      
+
       setLogsOpen: (isLogsOpen) => set({ isLogsOpen }),
-      
+
       executeCode: async () => {
         const { code, addLog, setCodeStatus, setLogsOpen } = get();
-        
+
         setCodeStatus('executing');
         setLogsOpen(true);
         addLog({ type: 'info', message: 'Starting code execution...' });
-        
+
         try {
           // Simulate code execution
           await new Promise(resolve => setTimeout(resolve, 2000));
-          
+
           // Mock successful execution
           addLog({ type: 'success', message: 'Code executed successfully!' });
           addLog({ type: 'info', message: `Output: ${code.split('\n').length} lines processed` });
-          
+
           setCodeStatus('saved');
         } catch (error) {
           addLog({ type: 'error', message: `Execution failed: ${error}` });

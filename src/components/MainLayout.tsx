@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Split from 'react-split';
 import { CodeEditor } from './CodeEditor';
 import { ChatInterface } from './ChatInterface';
@@ -48,6 +48,23 @@ export const MainLayout = () => {
     setCodeStatus('saved');
   };
 
+  const handleHotkeys = () => {
+    const handleHotkey = useAppStore((state) => state.handleHotkey);
+
+    useEffect(() => {
+      const listener = (event: KeyboardEvent) => {
+        const combo = `${event.ctrlKey || event.metaKey ? 'ctrl+' : ''}${event.key.toLowerCase()}`;
+        if (combo === 'ctrl+s' || combo === 'ctrl+r') {
+          event.preventDefault();
+          handleHotkey(combo);
+        }
+      };
+
+      window.addEventListener('keydown', listener);
+      return () => window.removeEventListener('keydown', listener);
+    }, [handleHotkey]);
+  };
+  handleHotkeys();
   return (
     <div className="h-screen bg-background flex flex-col h-screen">
       {/* Top Header */}
