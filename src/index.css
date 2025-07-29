@@ -1,0 +1,231 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import '@xyflow/react/dist/style.css';
+
+/* Modern AI Code Editor Design System - Dark theme focused with beautiful gradients */
+
+@layer base {
+  :root {
+    /* Core backgrounds - Dark editor theme */
+    --background: 220 13% 9%;
+    --foreground: 220 14% 96%;
+
+    /* Editor surfaces */
+    --card: 220 13% 11%;
+    --card-foreground: 220 14% 96%;
+
+    --popover: 220 13% 9%;
+    --popover-foreground: 220 14% 96%;
+
+    /* AI Assistant brand colors */
+    --primary: 262 83% 58%;
+    --primary-foreground: 220 14% 96%;
+    --primary-glow: 262 83% 70%;
+
+    /* Editor secondary surfaces */
+    --secondary: 220 13% 14%;
+    --secondary-foreground: 220 14% 96%;
+
+    /* Muted elements */
+    --muted: 220 13% 14%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent colors for highlights */
+    --accent: 220 13% 18%;
+    --accent-foreground: 220 14% 96%;
+
+    /* Error states */
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 220 14% 96%;
+
+    /* Borders and inputs */
+    --border: 220 13% 20%;
+    --input: 220 13% 18%;
+    --ring: 262 83% 58%;
+
+    /* Code editor specific */
+    --editor-background: 220 13% 9%;
+    --editor-sidebar: 220 13% 7%;
+    --editor-line-numbers: 220 9% 46%;
+    --editor-selection: 262 83% 58% / 0.3;
+
+    /* Chat interface */
+    --chat-background: 220 13% 11%;
+    --chat-message-user: 262 83% 58%;
+    --chat-message-ai: 220 13% 14%;
+
+    /* Graph/Flow colors */
+    --node-background: 220 13% 16%;
+    --node-border: 220 13% 25%;
+    --node-selected: 262 83% 58%;
+    --edge-default: 220 9% 46%;
+    --edge-active: 262 83% 58%;
+
+    /* Status colors */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 217 91% 60%;
+
+    /* Beautiful gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 70%));
+    --gradient-surface: linear-gradient(180deg, hsl(220 13% 11%), hsl(220 13% 9%));
+    --gradient-border: linear-gradient(90deg, hsl(262 83% 58% / 0.2), hsl(262 83% 58% / 0.1));
+
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(262 83% 58% / 0.3);
+    --shadow-editor: 0 4px 20px hsl(220 13% 5% / 0.6);
+    --shadow-chat: 0 2px 10px hsl(220 13% 5% / 0.4);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, monospace;
+  }
+}
+
+/* Custom React Flow Theme */
+.react-flow {
+  --xy-node-color-default: hsl(var(--foreground));
+  --xy-node-background-color-default: hsl(var(--node-background));
+  --xy-node-border-default: 1px solid hsl(var(--node-border));
+  --xy-node-border-radius-default: var(--radius);
+  --xy-node-boxshadow-default: var(--shadow-editor);
+  
+  --xy-handle-background-color-default: hsl(var(--primary));
+  --xy-handle-border-color-default: hsl(var(--primary));
+  
+  --xy-edge-stroke-default: hsl(var(--edge-default));
+  --xy-edge-stroke-width-default: 2px;
+  
+  background-color: hsl(var(--background));
+}
+
+.react-flow__node.selected {
+  border-color: hsl(var(--node-selected)) !important;
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.4) !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: hsl(var(--edge-active)) !important;
+  stroke-width: 3px !important;
+}
+
+/* Split pane styling */
+.split {
+  overflow: hidden;
+  height: 100vh;
+}
+
+.split.split-horizontal > .split-pane {
+  position: relative;
+}
+
+.split.split-horizontal > .split-pane-resizer {
+  background: hsl(var(--border));
+  width: 1px;
+  cursor: col-resize;
+  position: relative;
+}
+
+.split.split-horizontal > .split-pane-resizer:hover {
+  background: hsl(var(--primary));
+  transition: background-color 0.2s ease;
+}
+
+/* Monaco Editor container */
+.monaco-editor-container {
+  height: 100%;
+  background: hsl(var(--editor-background));
+  border-radius: var(--radius);
+}
+
+/* Chat interface */
+.chat-container {
+  background: hsl(var(--chat-background));
+  border-left: 1px solid hsl(var(--border));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
