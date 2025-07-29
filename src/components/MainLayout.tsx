@@ -40,17 +40,12 @@ export const MainLayout = () => {
 
   const handleNodeChange = (newNodes: Node[]) => { setNodes(newNodes) };
 
-  const handleRun = async () => {
-    await executeCode();
-  };
+  const handleRun = async () => { await executeCode(); };
 
-  const handleSave = () => {
-    setCodeStatus('saved');
-  };
+  const handleSave = () => { setCodeStatus('saved'); };
 
   const handleHotkeys = () => {
     const handleHotkey = useAppStore((state) => state.handleHotkey);
-
     useEffect(() => {
       const listener = (event: KeyboardEvent) => {
         const combo = `${event.ctrlKey || event.metaKey ? 'ctrl+' : ''}${event.key.toLowerCase()}`;
@@ -59,14 +54,14 @@ export const MainLayout = () => {
           handleHotkey(combo);
         }
       };
-
       window.addEventListener('keydown', listener);
       return () => window.removeEventListener('keydown', listener);
     }, [handleHotkey]);
   };
   handleHotkeys();
+
   return (
-    <div className="h-screen bg-background flex flex-col h-screen">
+    <div className="h-screen bg-background flex flex-col">
       {/* Top Header */}
       <header className="border-b border-border bg-card px-4 py-2">
         <div className="flex items-center justify-between">
@@ -81,9 +76,7 @@ export const MainLayout = () => {
                 <p className="text-xs text-muted-foreground">Custom Cursor.ai</p>
               </div>
             </div>
-
             <div className="h-6 w-px bg-border" />
-
             <ModeToggle mode={mode} onModeChange={setMode} />
           </div>
 
@@ -153,7 +146,7 @@ export const MainLayout = () => {
       <div className="flex-grow overflow-auto h-full">
         {mode === 'code' ? (
           <Split
-            className="flex h-full"
+            className="flex h-full min-h-0 overflow-hidden"
             sizes={[70, 30]}
             minSize={[400, 300]}
             expandToMin={false}
@@ -164,13 +157,20 @@ export const MainLayout = () => {
             direction="horizontal"
             cursor="col-resize"
           >
-            {/* Code Editor Pane */}
-            <div className="h-full">
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                language={language}
-              />
+            {/* Code Editor Pane with LogsPanel below */}
+            <div className="flex flex-col h-full min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-auto">
+                <CodeEditor
+                  value={code}
+                  onChange={setCode}
+                  language={language}
+                />
+              </div>
+              {isLogsOpen && (
+                <div className="shrink-0 h-48">
+                  <LogsPanel />
+                </div>
+              )}
             </div>
 
             {/* Chat Interface Pane */}
@@ -195,7 +195,6 @@ export const MainLayout = () => {
             <div className="h-full">
               <VisualFlow onNodeChange={handleNodeChange} />
             </div>
-
             {/* Chat Interface Pane */}
             <div className="h-full">
               <ChatInterface currentMode={mode} />
@@ -203,9 +202,6 @@ export const MainLayout = () => {
           </Split>
         )}
       </div>
-
-      {/* Logs Panel */}
-      {isLogsOpen && <LogsPanel />}
 
       {/* Status Bar */}
       <footer className="border-t border-border bg-card px-4 py-1">
