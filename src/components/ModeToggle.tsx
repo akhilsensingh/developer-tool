@@ -24,12 +24,14 @@ export const ModeToggle = ({ mode, onModeChange }: ModeToggleProps) => {
         Code
       </Button>
       <Button
+        disabled={true} // Disabled visual
         variant={mode === 'visual' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('visual')}
         className={cn(
           'flex items-center gap-2 text-xs h-8',
-          mode === 'visual' && 'bg-primary text-primary-foreground shadow-sm'
+          mode === 'visual' && 'bg-primary text-primary-foreground shadow-sm',
+          'cursor-not-allowed'
         )}
       >
         <Workflow className="h-3 w-3" />
