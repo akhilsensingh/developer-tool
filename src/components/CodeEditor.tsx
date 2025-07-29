@@ -116,7 +116,7 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
             roundedSelection: false,
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            minimap: { enabled: true },
+            // minimap: { enabled: false },
             wordWrap: 'on',
             tabSize: 2,
             insertSpaces: true,
@@ -158,7 +158,7 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
               delay: 300,
               sticky: true,
             },
-            lightbulb: { enabled: true },
+            // lightbulb: { enabled: true },
             
             // Parameter hints
             parameterHints: {
@@ -198,7 +198,7 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
             
             // Find widget
             find: {
-              cursorMoveOnFindWidget: true,
+              // cursorMoveOnFindWidget: true,
               seedSearchStringFromSelection: 'always',
               autoFindInSelection: 'never',
             },

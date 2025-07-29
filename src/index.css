@@ -1,7 +1,7 @@
+@import '@xyflow/react/dist/style.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import '@xyflow/react/dist/style.css';
 
 /* Modern AI Code Editor Design System - Dark theme focused with beautiful gradients */
 
