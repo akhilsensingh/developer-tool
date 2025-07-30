@@ -1,4 +1,4 @@
-import { X, Terminal, AlertCircle, CheckCircle, Info, AlertTriangle, ChevronUp } from 'lucide-react';
+import { X, Terminal, AlertCircle, CheckCircle, Info, AlertTriangle, GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -82,11 +82,11 @@ export const LogsPanel = () => {
       {/* Header */}
       {/* Resize Handle */}
       <div
-        className="h-2 bg-border cursor-ns-resize hover:bg-primary/20 transition-colors flex items-center justify-center"
+        className="h-2 bg-transparent cursor-ns-resize hover: transition-colors flex items-center justify-center"
         onMouseDown={handleResizeStart}
         title="Drag to resize"
       >
-        <ChevronUp className="h-3 w-3 text-muted-foreground" />
+        <GripHorizontal className="h-2 w-2 text-muted-foreground" />
       </div>
       <div className="flex items-center justify-between px-3 py-1 border-b border-border">
         <div className="flex items-center gap-2">

@@ -13,7 +13,7 @@ import {
   Code, 
   Workflow, 
   Lightbulb,
-  ChevronLeft
+  GripVertical
 } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -215,13 +215,13 @@ yourFunction();`;
       {/* Resize Handle (left edge) */}
       <div
         ref={resizeRef}
-        className="absolute left-0 top-0 h-full w-2 flex items-center justify-center cursor-ew-resize select-none group z-20"
+        className="absolute left-0 top-0 h-full w-2 flex items-center justify-center cursor-ew-resize select-none group z-20 bg-transparent"
         onMouseDown={handleResizeStart}
         style={{ minWidth: 8, maxWidth: 16 }}
         title="Resize chat panel"
       >
-        <div className="w-1 h-8 bg-muted-foreground/30 rounded-full group-hover:bg-primary/50 transition-colors absolute left-1/2 -translate-x-1/2" />
-        <ChevronLeft className="h-4 w-4 text-muted-foreground relative z-10" />
+        <div className="w-1 h-8 bg-transparent rounded-full group-hover: transition-colors absolute left-1/2 -translate-x-1/2" />
+        <GripVertical className="h-2 w-2 text-muted-foreground relative z-10" />
       </div>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
