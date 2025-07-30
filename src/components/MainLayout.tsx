@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Split from 'react-split';
 import { CodeEditor } from './CodeEditor';
 import { ChatInterface } from './ChatInterface';
@@ -32,6 +32,7 @@ export const MainLayout = () => {
     setNodes,
     executeCode,
     isLogsOpen,
+    setLogsOpen,
     codeStatus,
     setCodeStatus
   } = useAppStore();
@@ -43,6 +44,8 @@ export const MainLayout = () => {
   const handleRun = async () => { await executeCode(); };
 
   const handleSave = () => { setCodeStatus('saved'); };
+
+  const handleLogsToggle = () => { setLogsOpen(!isLogsOpen); };
 
   const handleHotkeys = () => {
     const handleHotkey = useAppStore((state) => state.handleHotkey);
@@ -68,12 +71,12 @@ export const MainLayout = () => {
           {/* Left Section */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Terminal className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center">
+                <img src="/Union.svg" alt="Logo" className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold">AI Code Studio</h1>
-                <p className="text-xs text-muted-foreground">Custom Cursor.ai</p>
+                <h1 className="text-sm font-semibold">Developer Studio</h1>
+                <p className="text-xs text-muted-foreground">Phinite.AI</p>
               </div>
             </div>
             <div className="h-6 w-px bg-border" />
@@ -145,21 +148,10 @@ export const MainLayout = () => {
       {/* Main Content */}
       <div className="flex-grow overflow-auto h-full">
         {mode === 'code' ? (
-          <Split
-            className="flex h-full min-h-0 overflow-hidden"
-            sizes={[70, 30]}
-            minSize={[400, 300]}
-            expandToMin={false}
-            gutterSize={1}
-            gutterAlign="center"
-            snapOffset={30}
-            dragInterval={1}
-            direction="horizontal"
-            cursor="col-resize"
-          >
+          <div className="flex h-full min-h-0 overflow-hidden">
             {/* Code Editor Pane with LogsPanel below */}
-            <div className="flex flex-col h-full min-h-0 overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col h-full min-h-0 overflow-hidden flex-1">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <CodeEditor
                   value={code}
                   onChange={setCode}
@@ -167,7 +159,7 @@ export const MainLayout = () => {
                 />
               </div>
               {isLogsOpen && (
-                <div className="shrink-0 h-48">
+                <div className="shrink-0">
                   <LogsPanel />
                 </div>
               )}
@@ -177,7 +169,7 @@ export const MainLayout = () => {
             <div className="h-full">
               <ChatInterface currentMode={mode} />
             </div>
-          </Split>
+          </div>
         ) : (
           <Split
             className="flex h-full"
@@ -203,25 +195,35 @@ export const MainLayout = () => {
         )}
       </div>
 
-      {/* Status Bar */}
-      <footer className="border-t border-border bg-card px-4 py-1">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-4">
-            <span>Status: Ready</span>
-            <span>•</span>
-            <span>AI: Connected</span>
-            <span>•</span>
-            <span>Mode: {mode === 'code' ? 'Code Editor' : 'Visual Flow'}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>Line 1, Col 1</span>
-            <span>•</span>
-            <span>UTF-8</span>
-            <span>•</span>
-            <span>Spaces: 2</span>
-          </div>
-        </div>
-      </footer>
+             {/* Status Bar */}
+       <footer className="border-t border-border bg-card px-4 py-1">
+         <div className="flex items-center justify-between text-xs text-muted-foreground">
+           <div className="flex items-center gap-4">
+             <span>Status: Ready</span>
+             <span>•</span>
+             <span>AI: Connected</span>
+             <span>•</span>
+             <span>Mode: {mode === 'code' ? 'Code Editor' : 'Visual Flow'}</span>
+           </div>
+           <div className="flex items-center gap-4">
+                           <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogsToggle}
+                className={`text-xs px-0 py-1 h-6 hover:bg-transparent ${isLogsOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Toggle Logs Panel"
+              >
+                Logs
+              </Button>
+             <span>•</span>
+             <span>Line 1, Col 1</span>
+             <span>•</span>
+             <span>UTF-8</span>
+             <span>•</span>
+             <span>Spaces: 2</span>
+           </div>
+         </div>
+       </footer>
     </div>
   );
 };

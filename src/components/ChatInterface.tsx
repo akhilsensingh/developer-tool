@@ -12,7 +12,8 @@ import {
   User, 
   Code, 
   Workflow, 
-  Lightbulb 
+  Lightbulb,
+  ChevronLeft
 } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -20,10 +21,40 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface = ({ currentMode }: ChatInterfaceProps) => {
-  const { messages, addMessage, setCode, mode } = useAppStore();
+  const { messages, addMessage, setCode, mode, chatPanelWidth, setChatPanelWidth } = useAppStore();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Resizing logic
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const container = resizeRef.current?.parentElement;
+      if (!container) return;
+      const containerRect = container.getBoundingClientRect();
+      const minWidth = 240;
+      const maxWidth = Math.min(window.innerWidth * 0.3, 600);
+      const newWidth = containerRect.right - e.clientX;
+      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      setChatPanelWidth(clampedWidth);
+    };
+    const handleMouseUp = () => setIsResizing(false);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, setChatPanelWidth]);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -173,7 +204,25 @@ yourFunction();`;
   };
 
   return (
-    <div className="h-full flex flex-col bg-card">
+    <div 
+      className="h-full flex flex-col bg-card relative"
+      style={{ 
+        width: chatPanelWidth, 
+        minWidth: 240, 
+        maxWidth: Math.min(window.innerWidth * 0.3, 600) 
+      }}
+    >
+      {/* Resize Handle (left edge) */}
+      <div
+        ref={resizeRef}
+        className="absolute left-0 top-0 h-full w-2 flex items-center justify-center cursor-ew-resize select-none group z-20"
+        onMouseDown={handleResizeStart}
+        style={{ minWidth: 8, maxWidth: 16 }}
+        title="Resize chat panel"
+      >
+        <div className="w-1 h-8 bg-muted-foreground/30 rounded-full group-hover:bg-primary/50 transition-colors absolute left-1/2 -translate-x-1/2" />
+        <ChevronLeft className="h-4 w-4 text-muted-foreground relative z-10" />
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-3">

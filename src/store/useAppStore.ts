@@ -23,6 +23,8 @@ interface AppState {
   // Mode and UI state
   mode: 'code' | 'visual';
   isLogsOpen: boolean;
+  logsPanelHeight: number;
+  chatPanelWidth: number;
 
   // Code editor state
   code: string;
@@ -52,6 +54,8 @@ interface AppState {
   addLog: (log: Omit<LogEntry, 'id' | 'timestamp'>) => void;
   clearLogs: () => void;
   setLogsOpen: (open: boolean) => void;
+  setLogsPanelHeight: (height: number) => void;
+  setChatPanelWidth: (width: number) => void;
   executeCode: () => Promise<void>;
 }
 
@@ -61,6 +65,8 @@ export const useAppStore = create<AppState>()(
       // Initial state
       mode: 'code',
       isLogsOpen: false,
+      logsPanelHeight: 192, // Default height (h-48 = 192px)
+      chatPanelWidth: 320, // Default width in px
       code: `// Welcome to your AI-powered code editor!
 // Switch between Code and Visual modes to build amazing applications
 
@@ -137,6 +143,9 @@ console.log(user);`,
 
       setLogsOpen: (isLogsOpen) => set({ isLogsOpen }),
 
+      setLogsPanelHeight: (logsPanelHeight) => set({ logsPanelHeight }),
+      setChatPanelWidth: (chatPanelWidth) => set({ chatPanelWidth }),
+
       executeCode: async () => {
         const { code, addLog, setCodeStatus, setLogsOpen } = get();
 
@@ -167,7 +176,9 @@ console.log(user);`,
         language: state.language,
         nodes: state.nodes,
         edges: state.edges,
-        messages: state.messages
+        messages: state.messages,
+        logsPanelHeight: state.logsPanelHeight,
+        chatPanelWidth: state.chatPanelWidth
       })
     }
   )
