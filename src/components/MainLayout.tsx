@@ -5,18 +5,17 @@ import { ChatInterface } from './ChatInterface';
 import { VisualFlow } from './VisualFlow';
 import { LogsPanel } from './LogsPanel';
 import { ModeToggle } from './ModeToggle';
+import { SettingsDialog } from './SettingsDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/store/useAppStore';
 import { Node } from '@xyflow/react';
 import {
-  Terminal,
   Sparkles,
   Play,
   Save,
   Share,
   Settings,
-  Menu,
   Maximize2,
   Pause
 } from 'lucide-react';
@@ -37,6 +36,7 @@ export const MainLayout = () => {
     setCodeStatus
   } = useAppStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isRunning = codeStatus === 'executing';
 
   const handleNodeChange = (newNodes: Node[]) => { setNodes(newNodes) };
@@ -46,6 +46,8 @@ export const MainLayout = () => {
   const handleSave = () => { setCodeStatus('saved'); };
 
   const handleLogsToggle = () => { setLogsOpen(!isLogsOpen); };
+
+  const handleSettingsOpen = () => { setIsSettingsOpen(true); };
 
   const handleHotkeys = () => {
     const handleHotkey = useAppStore((state) => state.handleHotkey);
@@ -130,7 +132,7 @@ export const MainLayout = () => {
               <Share className="h-3 w-3 mr-1" />
               Share
             </Button>
-            <Button variant="ghost" size="sm" className="text-xs">
+            <Button variant="ghost" size="sm" className="text-xs" onClick={handleSettingsOpen}>
               <Settings className="h-3 w-3" />
             </Button>
             <Button
@@ -224,6 +226,12 @@ export const MainLayout = () => {
            </div>
          </div>
        </footer>
+
+      {/* Settings Dialog */}
+      <SettingsDialog 
+        open={isSettingsOpen} 
+        onOpenChange={setIsSettingsOpen} 
+      />
     </div>
   );
 };
