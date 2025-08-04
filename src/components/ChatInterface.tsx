@@ -18,7 +18,8 @@ import {
   Copy,
   Check,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -269,7 +270,7 @@ const TypingIndicator = () => {
 };
 
 export const ChatInterface = ({ currentMode }: ChatInterfaceProps) => {
-  const { messages, addMessage, setCode, mode, chatPanelWidth, setChatPanelWidth } = useAppStore();
+  const { messages, addMessage, setCode, mode, chatPanelWidth, setChatPanelWidth, setChatOpen } = useAppStore();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
@@ -432,24 +433,23 @@ yourFunction();`;
     setInput('');
     setIsTyping(true);
 
-    // Check if user is asking for code generation
-    const isCodeRequest = currentMode === 'code' && (
-      currentInput.toLowerCase().includes('write') ||
-      currentInput.toLowerCase().includes('create') ||
-      currentInput.toLowerCase().includes('generate') ||
-      currentInput.toLowerCase().includes('build') ||
-      currentInput.toLowerCase().includes('make') ||
-      currentInput.toLowerCase().includes('code')
-    );
+    // Always generate code when in code mode
+    const isCodeRequest = currentMode === 'code';
+    console.log('Code request check:', { currentMode, isCodeRequest, currentInput });
 
     // Generate AI response
     let aiResponse = getAIResponse(currentInput, currentMode);
     
     // If it's a code request, generate and update code
     if (isCodeRequest) {
+      console.log('Generating code for input:', currentInput);
       const generatedCode = generateCodeFromPrompt(currentInput);
+      console.log('Generated code:', generatedCode);
+      console.log('Setting code in store...');
       setCode(generatedCode);
       aiResponse = `I've generated code based on your request and updated the editor. The code includes:\n\n${currentInput}\n\nYou can now run or modify it as needed!`;
+    } else {
+      console.log('Not generating code - isCodeRequest is false');
     }
 
     // Add AI message with streaming
@@ -579,6 +579,54 @@ This script demonstrates basic data visualization with matplotlib. You can adapt
     setStreamingMessageId(null);
   };
 
+  // Chat suggestion handlers
+  const handleSuggestionClick = (suggestion: string, type: 'editor' | 'chat' | 'both') => {
+    setInput(suggestion);
+    
+    // Auto-send the suggestion
+    setTimeout(() => {
+      const currentInput = suggestion;
+      
+      // Add user message
+      addMessage({
+        type: 'user',
+        content: currentInput,
+        context: currentMode === 'code' ? 'code' : 'visual'
+      });
+
+      setIsTyping(true);
+
+      // Generate AI response based on type
+      let aiResponse = '';
+      let generatedCode = '';
+
+      if (type === 'editor' || type === 'both') {
+        // Generate code for editor
+        generatedCode = generateCodeFromPrompt(suggestion);
+        setCode(generatedCode);
+        aiResponse = `I've generated code based on your request and updated the editor. The code includes:\n\n${suggestion}\n\nYou can now run or modify it as needed!`;
+      } else if (type === 'chat') {
+        // Generate code for chat only
+        aiResponse = getAIResponse(suggestion, currentMode);
+      }
+
+      // Add AI message with streaming
+      setTimeout(() => {
+        const messageId = Date.now().toString();
+        lastMessageIdRef.current = messageId;
+        
+        addMessage({
+          type: 'ai',
+          content: aiResponse,
+          context: currentMode === 'code' ? 'code' : 'visual'
+        }, messageId);
+
+        setStreamingMessageId(messageId);
+        setIsTyping(false);
+      }, 500);
+    }, 100);
+  };
+
   return (
     <div 
       className="h-full flex flex-col bg-card relative"
@@ -610,6 +658,15 @@ This script demonstrates basic data visualization with matplotlib. You can adapt
             <span className="ml-1">{currentMode}</span>
           </Badge>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setChatOpen(false)}
+          className="h-6 w-6 p-0 hover:bg-muted"
+          title="Close Chat"
+        >
+          <X className="h-3 w-3" />
+        </Button>
       </div>
 
       {/* Messages */}
@@ -617,14 +674,47 @@ This script demonstrates basic data visualization with matplotlib. You can adapt
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center">
-              <div className="space-y-2">
-                <Bot className="h-8 w-8 text-muted-foreground mx-auto" />
-                <p className="text-sm text-muted-foreground">
-                  Hello! I'm your AI coding assistant.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Ask me to write code, create components, or help with your project.
-                </p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Bot className="h-8 w-8 text-muted-foreground mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Hello! I'm your AI coding assistant.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ask me to write code, create components, or help with your project.
+                  </p>
+                </div>
+                
+                                 {/* Chat Suggestions */}
+                 <div className="space-y-2">
+                   <p className="text-xs text-muted-foreground font-medium">Quick Start:</p>
+                   <div className="flex flex-col gap-2">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => handleSuggestionClick('Create a data processing pipeline for CSV files', 'editor')}
+                       className="text-xs h-8 justify-start"
+                     >
+                       Generate code in editor
+                     </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => handleSuggestionClick('Show me different sorting algorithms', 'chat')}
+                       className="text-xs h-8 justify-start"
+                     >
+                       Generate code in chat
+                     </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => handleSuggestionClick('Build a REST API with authentication', 'both')}
+                       className="text-xs h-8 justify-start"
+                     >
+                       Generate code in both
+                     </Button>
+                   </div>
+                 </div>
               </div>
             </div>
           ) : (
@@ -644,6 +734,39 @@ This script demonstrates basic data visualization with matplotlib. You can adapt
         </div>
         <div ref={messagesEndRef} />
       </ScrollArea>
+
+      {/* Chat Suggestions - Only when chat is empty */}
+      {messages.length === 0 && (
+        <div className="px-3 py-2 border-t border-border">
+          <p className="text-xs text-muted-foreground font-medium mb-2">Try these examples to get started:</p>
+          <div className="flex gap-2 overflow-x-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSuggestionClick('Write documentation for this code', 'chat')}
+              className="text-xs h-8 whitespace-nowrap flex-shrink-0"
+            >
+              Write documentation
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSuggestionClick('Optimize performance of this function', 'editor')}
+              className="text-xs h-8 whitespace-nowrap flex-shrink-0"
+            >
+              Optimize performance
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSuggestionClick('Find and fix bugs in this code', 'both')}
+              className="text-xs h-8 whitespace-nowrap flex-shrink-0"
+            >
+              Find and fix bugs
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="p-3 border-t border-border">

@@ -16,8 +16,8 @@ import {
   Save,
   Share,
   Settings,
-  Maximize2,
-  Pause
+  Pause,
+  Bot
 } from 'lucide-react';
 
 export const MainLayout = () => {
@@ -32,10 +32,11 @@ export const MainLayout = () => {
     executeCode,
     isLogsOpen,
     setLogsOpen,
+    isChatOpen,
+    setChatOpen,
     codeStatus,
     setCodeStatus
   } = useAppStore();
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isRunning = codeStatus === 'executing';
 
@@ -46,6 +47,7 @@ export const MainLayout = () => {
   const handleSave = () => { setCodeStatus('saved'); };
 
   const handleLogsToggle = () => { setLogsOpen(!isLogsOpen); };
+  const handleChatToggle = () => { setChatOpen(!isChatOpen); };
 
   const handleSettingsOpen = () => { setIsSettingsOpen(true); };
 
@@ -135,14 +137,6 @@ export const MainLayout = () => {
             <Button variant="ghost" size="sm" className="text-xs" onClick={handleSettingsOpen}>
               <Settings className="h-3 w-3" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="text-xs"
-            >
-              <Maximize2 className="h-3 w-3" />
-            </Button>
           </div>
         </div>
       </header>
@@ -168,32 +162,40 @@ export const MainLayout = () => {
             </div>
 
             {/* Chat Interface Pane */}
-            <div className="h-full">
-              <ChatInterface currentMode={mode} />
-            </div>
+            {isChatOpen && (
+              <div className="h-full">
+                <ChatInterface currentMode={mode} />
+              </div>
+            )}
           </div>
         ) : (
-          <Split
-            className="flex h-full"
-            sizes={[70, 30]}
-            minSize={[400, 300]}
-            expandToMin={false}
-            gutterSize={1}
-            gutterAlign="center"
-            snapOffset={30}
-            dragInterval={1}
-            direction="horizontal"
-            cursor="col-resize"
-          >
-            {/* Visual Flow Pane */}
+          isChatOpen ? (
+            <Split
+              className="flex h-full"
+              sizes={[70, 30]}
+              minSize={[400, 300]}
+              expandToMin={false}
+              gutterSize={1}
+              gutterAlign="center"
+              snapOffset={30}
+              dragInterval={1}
+              direction="horizontal"
+              cursor="col-resize"
+            >
+              {/* Visual Flow Pane */}
+              <div className="h-full">
+                <VisualFlow onNodeChange={handleNodeChange} />
+              </div>
+              {/* Chat Interface Pane */}
+              <div className="h-full">
+                <ChatInterface currentMode={mode} />
+              </div>
+            </Split>
+          ) : (
             <div className="h-full">
               <VisualFlow onNodeChange={handleNodeChange} />
             </div>
-            {/* Chat Interface Pane */}
-            <div className="h-full">
-              <ChatInterface currentMode={mode} />
-            </div>
-          </Split>
+          )
         )}
       </div>
 
@@ -208,15 +210,26 @@ export const MainLayout = () => {
              <span>Mode: {mode === 'code' ? 'Code Editor' : 'Visual Flow'}</span>
            </div>
            <div className="flex items-center gap-4">
-                           <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogsToggle}
-                className={`text-xs px-0 py-1 h-6 hover:bg-transparent ${isLogsOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title="Toggle Logs Panel"
-              >
-                Logs
-              </Button>
+             <Button
+               variant="ghost"
+               size="sm"
+               onClick={handleChatToggle}
+               className={`text-xs px-0 py-1 h-6 hover:bg-transparent ${isChatOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+               title="Toggle AI Chat"
+             >
+               <Bot className="h-3 w-3 mr-1" />
+               AI Chat
+             </Button>
+             <span>•</span>
+             <Button
+               variant="ghost"
+               size="sm"
+               onClick={handleLogsToggle}
+               className={`text-xs px-0 py-1 h-6 hover:bg-transparent ${isLogsOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+               title="Toggle Logs Panel"
+             >
+               Logs
+             </Button>
              <span>•</span>
              <span>Line 1, Col 1</span>
              <span>•</span>

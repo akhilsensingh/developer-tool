@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { useAppStore } from '@/store/useAppStore';
 import {
     Code,
     Palette,
@@ -36,6 +37,73 @@ interface SettingsDialogProps {
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
     const [activeTab, setActiveTab] = useState('editor');
     const [selectedTheme, setSelectedTheme] = useState('system');
+
+    const { 
+      fontSize, 
+      tabSize, 
+      showLineNumbers, 
+      showMinimap, 
+      wordWrap, 
+      codeCompletion,
+      code,
+      messages,
+      setFontSize, 
+      setTabSize, 
+      setShowLineNumbers,
+      setShowMinimap,
+      setWordWrap,
+      setCodeCompletion,
+      setCode,
+      addMessage
+    } = useAppStore();
+
+    // Calculate storage usage
+    const calculateStorageUsage = () => {
+        const codeSize = new Blob([code]).size;
+        // Only count actual messages, not empty array overhead
+        // An empty array "[]" is exactly 2 bytes, so we subtract that for empty arrays
+        const messagesJson = JSON.stringify(messages);
+        const messagesSize = messages.length > 0 ? new Blob([messagesJson]).size : 0;
+        const totalSize = codeSize + messagesSize;
+        
+        // Convert to appropriate units
+        const formatSize = (bytes: number) => {
+            if (bytes < 1024) {
+                return `${bytes} B`;
+            } else if (bytes < 1024 * 1024) {
+                return `${(bytes / 1024).toFixed(2)} KB`;
+            } else {
+                return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+            }
+        };
+        
+        const totalSizeMB = (totalSize / (1024 * 1024));
+        const percentage = ((totalSize / (50 * 1024 * 1024)) * 100);
+        
+        return {
+            totalSizeFormatted: formatSize(totalSize),
+            totalSizeMB: totalSizeMB,
+            percentage: Math.max(0.1, percentage), // Minimum 0.1% to show progress bar
+            codeSizeFormatted: formatSize(codeSize),
+            messagesSizeFormatted: formatSize(messagesSize),
+            codeSize: codeSize,
+            messagesSize: messagesSize
+        };
+    };
+
+    const storageUsage = calculateStorageUsage();
+    
+    // Debug: Log messages to see what's causing the 2B
+    console.log('Messages array:', messages);
+    console.log('Messages length:', messages.length);
+    console.log('Messages JSON string:', JSON.stringify(messages));
+    console.log('Messages JSON size:', new Blob([JSON.stringify(messages)]).size);
+
+    const handleClearAllData = () => {
+        setCode('');
+        // Force clear messages by setting the store directly
+        useAppStore.setState({ messages: [] });
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,7 +150,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="font-size">Font Size</Label>
-                                            <Select defaultValue="14">
+                                            <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -97,7 +165,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
 
                                         <div className="space-y-2">
                                             <Label htmlFor="tab-size">Tab Size</Label>
-                                            <Select defaultValue="4">
+                                            <Select value={tabSize.toString()} onValueChange={(value) => setTabSize(parseInt(value))}>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -116,7 +184,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                                                 <Label htmlFor="line-numbers">Line Numbers</Label>
                                                 <p className="text-sm text-muted-foreground">Show line numbers in the editor</p>
                                             </div>
-                                            <Switch id="line-numbers" defaultChecked />
+                                            <Switch 
+                                                id="line-numbers" 
+                                                checked={showLineNumbers}
+                                                onCheckedChange={setShowLineNumbers}
+                                            />
                                         </div>
                                     </div>
 
@@ -126,7 +198,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                                                 <Label htmlFor="minimap">Minimap</Label>
                                                 <p className="text-sm text-muted-foreground">Show code minimap for navigation</p>
                                             </div>
-                                            <Switch id="minimap" defaultChecked />
+                                            <Switch 
+                                                id="minimap" 
+                                                checked={showMinimap}
+                                                onCheckedChange={setShowMinimap}
+                                            />
                                         </div>
                                     </div>
 
@@ -136,7 +212,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                                                 <Label htmlFor="word-wrap">Word Wrap</Label>
                                                 <p className="text-sm text-muted-foreground">Wrap long lines to fit editor width</p>
                                             </div>
-                                            <Switch id="word-wrap" />
+                                            <Switch 
+                                                id="word-wrap" 
+                                                checked={wordWrap}
+                                                onCheckedChange={setWordWrap}
+                                            />
                                         </div>
                                     </div>
 
@@ -146,7 +226,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                                                 <Label htmlFor="code-completion">Code Completion</Label>
                                                 <p className="text-sm text-muted-foreground">Enable intelligent code suggestions</p>
                                             </div>
-                                            <Switch id="code-completion" defaultChecked />
+                                            <Switch 
+                                                id="code-completion" 
+                                                checked={codeCompletion}
+                                                onCheckedChange={setCodeCompletion}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -160,7 +244,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold">Theme</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Customize the look and feel of your workspace
+                                    Customize the look and feel of your workspace, Coming Soon...
                                 </p>
                             </div>
 
@@ -270,30 +354,34 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium">Local Storage Used</span>
-                                    <span className="text-sm">2.4 MB / 50 MB</span>
+                                    <span className="text-sm">{storageUsage.totalSizeFormatted} / 50 MB</span>
                                 </div>
                                 
                                 <div className="w-full bg-secondary rounded-full h-2">
-                                    <div className="bg-primary h-2 rounded-full" style={{ width: '4.8%' }}></div>
+                                    <div className="bg-primary h-2 rounded-full" style={{ width: `${storageUsage.percentage}%` }}></div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span>Code Files</span>
-                                        <span>1.2 MB</span>
+                                        <span>{storageUsage.codeSizeFormatted}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span>Chat History</span>
-                                        <span>0.8 MB</span>
+                                        <span>{storageUsage.messagesSizeFormatted}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span>Visual Flows</span>
-                                        <span>0.4 MB</span>
+                                        <span>0 B</span>
                                     </div>
                                 </div>
 
                                 <div className="pt-4">
-                                    <Button variant="destructive" className="w-full">
+                                    <Button 
+                                        variant="destructive" 
+                                        className="w-full"
+                                        onClick={handleClearAllData}
+                                    >
                                         Clear All Local Data
                                     </Button>
                                     <p className="text-xs text-muted-foreground mt-2 text-center">

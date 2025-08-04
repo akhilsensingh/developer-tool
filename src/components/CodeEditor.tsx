@@ -1,8 +1,8 @@
 import Editor from '@monaco-editor/react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Play, Save, Settings, Circle } from 'lucide-react';
+import { FileText, Play, Save, Settings, Circle, Bot } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
 interface CodeEditorProps {
@@ -12,10 +12,61 @@ interface CodeEditorProps {
 }
 
 export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
-  const { codeStatus, setCodeStatus, executeCode, setLogsOpen } = useAppStore();
+  const { 
+    code,
+    setCode,
+    codeStatus, 
+    setCodeStatus, 
+    executeCode, 
+    setLogsOpen, 
+    setChatOpen, 
+    isChatOpen, 
+    fontSize, 
+    tabSize, 
+    showLineNumbers,
+    showMinimap,
+    wordWrap,
+    codeCompletion
+  } = useAppStore();
+  const editorRef = useRef<any>(null);
+  const [isStatusGlowing, setIsStatusGlowing] = useState(false);
+  const prevStatusRef = useRef(codeStatus);
 
   const handleEditorChange = (value: string | undefined) => {
-    onChange(value || '');
+    const newValue = value || '';
+    console.log('CodeEditor: Code changed to:', newValue.substring(0, 100) + '...');
+    setCode(newValue);
+    onChange(newValue);
+  };
+
+  const handleEditorDidMount = (editor: any) => {
+    editorRef.current = editor;
+    console.log('Editor mounted with tabSize:', tabSize);
+    
+    // Set initial options on both editor and model
+    editor.updateOptions({
+      tabSize: tabSize,
+      insertSpaces: true,
+      lineNumbers: showLineNumbers ? 'on' : 'off',
+      minimap: { enabled: showMinimap },
+      wordWrap: wordWrap ? 'on' : 'off',
+      quickSuggestions: codeCompletion ? {
+        other: true,
+        comments: true,
+        strings: true,
+      } : false,
+      suggestOnTriggerCharacters: codeCompletion,
+      acceptSuggestionOnCommitCharacter: codeCompletion,
+      acceptSuggestionOnEnter: codeCompletion ? 'on' : 'off'
+    });
+    
+    // Also set on the model
+    if (editor.getModel()) {
+      editor.getModel().updateOptions({
+        tabSize: tabSize,
+        insertSpaces: true
+      });
+    }
   };
 
   const getStatusColor = () => {
@@ -48,6 +99,56 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
     }
   };
 
+  // Detect status changes and trigger glow animation
+  useEffect(() => {
+    if (prevStatusRef.current !== codeStatus) {
+      console.log('Status changed from', prevStatusRef.current, 'to', codeStatus);
+      setIsStatusGlowing(true);
+      prevStatusRef.current = codeStatus;
+      
+      // Remove glow after animation completes
+      const timer = setTimeout(() => {
+        setIsStatusGlowing(false);
+      }, 2000); // Glow for 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [codeStatus]);
+
+  // Update editor options when settings change
+  useEffect(() => {
+    console.log('Editor settings updated:', { tabSize, fontSize, showLineNumbers, showMinimap, wordWrap, codeCompletion });
+    console.log('Current code in store:', code.substring(0, 100) + '...');
+    if (editorRef.current) {
+      // Update editor options
+      editorRef.current.updateOptions({
+        tabSize: tabSize,
+        insertSpaces: true,
+        fontSize: fontSize,
+        lineNumbers: showLineNumbers ? 'on' : 'off',
+        minimap: { enabled: showMinimap },
+        wordWrap: wordWrap ? 'on' : 'off',
+        quickSuggestions: codeCompletion ? {
+          other: true,
+          comments: true,
+          strings: true,
+        } : false,
+        suggestOnTriggerCharacters: codeCompletion,
+        acceptSuggestionOnCommitCharacter: codeCompletion,
+        acceptSuggestionOnEnter: codeCompletion ? 'on' : 'off'
+      });
+      
+      // Also update model options
+      const model = editorRef.current.getModel();
+      if (model) {
+        model.updateOptions({
+          tabSize: tabSize,
+          insertSpaces: true
+        });
+      }
+    }
+  }, [tabSize, fontSize, showLineNumbers, showMinimap, wordWrap, codeCompletion]);
+
   return (
     <div className="h-full flex flex-col bg-editor-background">
       {/* Editor Header */}
@@ -59,47 +160,83 @@ export const CodeEditor = ({ value, onChange, language }: CodeEditorProps) => {
             {language.toUpperCase()}
           </Badge>
           <div className="flex items-center gap-1">
-            <Circle className={`h-2 w-2 fill-current ${getStatusColor()}`} />
-            <span className={`text-xs ${getStatusColor()}`}>
+            <Circle className={`h-2 w-2 fill-current ${getStatusColor()} ${isStatusGlowing ? 'animate-pulse drop-shadow-lg' : ''}`} 
+                    style={isStatusGlowing ? {
+                      filter: `drop-shadow(0 0 8px ${getStatusColor() === 'text-warning' ? '#fbbf24' : 
+                                                    getStatusColor() === 'text-success' ? '#10b981' : 
+                                                    getStatusColor() === 'text-primary' ? '#3b82f6' : 
+                                                    getStatusColor() === 'text-destructive' ? '#ef4444' : '#6b7280'})`
+                    } : {}} />
+            <span className={`text-xs ${getStatusColor()} ${isStatusGlowing ? 'animate-pulse font-semibold' : ''}`}
+                  style={isStatusGlowing ? {
+                    textShadow: `0 0 8px ${getStatusColor() === 'text-warning' ? '#fbbf24' : 
+                                          getStatusColor() === 'text-success' ? '#10b981' : 
+                                          getStatusColor() === 'text-primary' ? '#3b82f6' : 
+                                          getStatusColor() === 'text-destructive' ? '#ef4444' : '#6b7280'}`
+                  } : {}}>
               {getStatusText()}
             </span>
           </div>
+        </div>
+        <div className="w-6 h-6 flex items-center justify-center">
+          {!isChatOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChatOpen(true)}
+              className="h-6 w-6 p-0 hover:bg-muted"
+              title="Open AI Chat"
+            >
+              <Bot className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Monaco Editor */}
       <div className="flex-1 monaco-editor-container">
         <Editor
+          key={`editor-${tabSize}`}
           height="100%"
           language={language}
-          value={value}
+          value={code}
           onChange={handleEditorChange}
+          onMount={handleEditorDidMount}
+          beforeMount={(monaco) => {
+            monaco.editor.defineTheme('vs-dark', {
+              base: 'vs-dark',
+              inherit: true,
+              rules: [],
+              colors: {}
+            });
+          }}
           theme="vs-dark"
           options={{
-            fontSize: 14,
+            fontSize: fontSize,
             fontFamily: 'JetBrains Mono, Fira Code, Cascadia Code, SF Mono, Consolas, monospace',
-            lineNumbers: 'on',
+            lineNumbers: showLineNumbers ? 'on' : 'off',
             roundedSelection: false,
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            minimap: { enabled: false },
-            wordWrap: 'on',
-            tabSize: 2,
+            minimap: { enabled: showMinimap },
+            wordWrap: wordWrap ? 'on' : 'off',
+            tabSize: tabSize,
             insertSpaces: true,
+            detectIndentation: false,
             renderLineHighlight: 'line',
             selectionHighlight: false,
             bracketPairColorization: { enabled: true },
             
             // Enhanced IntelliSense and suggestions
-            suggestOnTriggerCharacters: true,
-            quickSuggestions: {
+            suggestOnTriggerCharacters: codeCompletion,
+            quickSuggestions: codeCompletion ? {
               other: true,
               comments: true,
               strings: true,
-            },
+            } : false,
             quickSuggestionsDelay: 100,
-            acceptSuggestionOnCommitCharacter: true,
-            acceptSuggestionOnEnter: 'on',
+            acceptSuggestionOnCommitCharacter: codeCompletion,
+            acceptSuggestionOnEnter: codeCompletion ? 'on' : 'off',
             suggest: {
               filterGraceful: true,
               insertMode: 'insert',

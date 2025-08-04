@@ -23,6 +23,7 @@ interface AppState {
   // Mode and UI state
   mode: 'code' | 'visual';
   isLogsOpen: boolean;
+  isChatOpen: boolean;
   logsPanelHeight: number;
   chatPanelWidth: number;
 
@@ -30,6 +31,12 @@ interface AppState {
   code: string;
   language: string;
   codeStatus: CodeStatus;
+  fontSize: number;
+  tabSize: number;
+  showLineNumbers: boolean;
+  showMinimap: boolean;
+  wordWrap: boolean;
+  codeCompletion: boolean;
   handleHotkey: (combo: string) => void;
 
 
@@ -54,8 +61,15 @@ interface AppState {
   addLog: (log: Omit<LogEntry, 'id' | 'timestamp'>) => void;
   clearLogs: () => void;
   setLogsOpen: (open: boolean) => void;
+  setChatOpen: (open: boolean) => void;
   setLogsPanelHeight: (height: number) => void;
   setChatPanelWidth: (width: number) => void;
+  setFontSize: (size: number) => void;
+  setTabSize: (size: number) => void;
+  setShowLineNumbers: (show: boolean) => void;
+  setShowMinimap: (show: boolean) => void;
+  setWordWrap: (wrap: boolean) => void;
+  setCodeCompletion: (enable: boolean) => void;
   executeCode: () => Promise<void>;
 }
 
@@ -65,6 +79,7 @@ export const useAppStore = create<AppState>()(
       // Initial state
       mode: 'code',
       isLogsOpen: false,
+      isChatOpen: true,
       logsPanelHeight: 192, // Default height (h-48 = 192px)
       chatPanelWidth: 320, // Default width in px
       code: `// Welcome to your AI-powered code editor!
@@ -88,6 +103,12 @@ const user = greetUser('Developer');
 console.log(user);`,
       language: 'javascript',
       codeStatus: 'draft',
+      fontSize: 14,
+      tabSize: 2,
+      showLineNumbers: true,
+      showMinimap: false,
+      wordWrap: true,
+      codeCompletion: true,
       nodes: [],
       edges: [],
       messages: [],
@@ -143,8 +164,16 @@ console.log(user);`,
 
       setLogsOpen: (isLogsOpen) => set({ isLogsOpen }),
 
+      setChatOpen: (isChatOpen) => set({ isChatOpen }),
+
       setLogsPanelHeight: (logsPanelHeight) => set({ logsPanelHeight }),
       setChatPanelWidth: (chatPanelWidth) => set({ chatPanelWidth }),
+      setFontSize: (fontSize) => set({ fontSize }),
+      setTabSize: (tabSize) => set({ tabSize }),
+      setShowLineNumbers: (showLineNumbers) => set({ showLineNumbers }),
+      setShowMinimap: (showMinimap) => set({ showMinimap }),
+      setWordWrap: (wordWrap) => set({ wordWrap }),
+      setCodeCompletion: (codeCompletion) => set({ codeCompletion }),
 
       executeCode: async () => {
         const { code, addLog, setCodeStatus, setLogsOpen } = get();
@@ -178,7 +207,14 @@ console.log(user);`,
         edges: state.edges,
         messages: state.messages,
         logsPanelHeight: state.logsPanelHeight,
-        chatPanelWidth: state.chatPanelWidth
+        chatPanelWidth: state.chatPanelWidth,
+        fontSize: state.fontSize,
+        tabSize: state.tabSize,
+        showLineNumbers: state.showLineNumbers,
+        showMinimap: state.showMinimap,
+        wordWrap: state.wordWrap,
+        codeCompletion: state.codeCompletion,
+        isChatOpen: state.isChatOpen
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
