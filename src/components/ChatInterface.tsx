@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,18 +14,267 @@ import {
   Code, 
   Workflow, 
   Lightbulb,
-  GripVertical
+  GripVertical,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface ChatInterfaceProps {
   currentMode: 'code' | 'visual';
 }
 
+// Component to render text with code blocks and copy buttons
+const TextWithCodeBlocks = ({ text }: { text: string }) => {
+  const [copiedBlocks, setCopiedBlocks] = useState<Set<string>>(new Set());
+  const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
+
+  const copyToClipboard = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedBlocks(prev => new Set(prev).add(code));
+      setTimeout(() => {
+        setCopiedBlocks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(code);
+          return newSet;
+        });
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
+
+  const toggleCodeBlock = (code: string) => {
+    setExpandedBlocks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(code)) {
+        newSet.delete(code);
+      } else {
+        newSet.add(code);
+      }
+      return newSet;
+    });
+  };
+
+  // Split text by code blocks
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  
+  return (
+    <div className="whitespace-pre-wrap">
+      {parts.map((part, index) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          // Extract language and code
+          const lines = part.split('\n');
+          const language = lines[0].replace('```', '').trim();
+          const code = lines.slice(1, -1).join('\n');
+          const isExpanded = expandedBlocks.has(code);
+          
+          return (
+            <div key={index} className="my-3 relative">
+              <div className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-t-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleCodeBlock(code)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                    <span className="font-mono">{language || 'code'}</span>
+                    <span className="text-xs opacity-70">
+                      ({code.split('\n').length} lines)
+                    </span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(code)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {copiedBlocks.has(code) ? (
+                    <>
+                      <Check className="h-3 w-3" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              {isExpanded && (
+                <pre className="bg-muted p-3 rounded-b-lg border border-border border-t-0 overflow-x-auto">
+                  <code className="text-sm font-mono">{code}</code>
+                </pre>
+              )}
+            </div>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </div>
+  );
+};
+
+// Fixed streaming text component for AI responses
+const StreamingText = ({ text, onComplete }: { text: string; onComplete?: () => void }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Reset when text changes
+    setDisplayedText('');
+    setCurrentIndex(0);
+    setIsComplete(false);
+  }, [text]);
+
+  useEffect(() => {
+    if (currentIndex < text.length && !isComplete) {
+      const timer = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, 30); // Adjust speed here
+
+      return () => clearTimeout(timer);
+    } else if (currentIndex >= text.length && !isComplete) {
+      setIsComplete(true);
+      onComplete?.();
+    }
+  }, [currentIndex, text, isComplete, onComplete]);
+
+  // Auto-scroll when text is being streamed
+  useEffect(() => {
+    if (!isComplete && displayedText.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [displayedText, isComplete]);
+
+  return (
+    <div>
+      <TextWithCodeBlocks text={displayedText} />
+      {!isComplete && (
+        <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 animate-pulse" style={{ animationDuration: '1s' }} />
+      )}
+      <div ref={messagesEndRef} />
+    </div>
+  );
+};
+
+// Simple message component without excessive animations
+const MessageBubble = ({ 
+  message, 
+  isStreaming, 
+  onStreamingComplete 
+}: { 
+  message: any; 
+  isStreaming: boolean; 
+  onStreamingComplete: () => void;
+}) => {
+  const isUser = message.type === 'user';
+  
+  const getContextIcon = (context?: string) => {
+    switch (context) {
+      case 'code':
+        return <Code className="h-3 w-3" />;
+      case 'visual':
+        return <Workflow className="h-3 w-3" />;
+      default:
+        return <Lightbulb className="h-3 w-3" />;
+    }
+  };
+  
+  return (
+    <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {!isUser && (
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-primary text-primary-foreground">
+            <Bot className="h-4 w-4" />
+          </AvatarFallback>
+        </Avatar>
+      )}
+      
+      <div className={`max-w-[80%] space-y-1 ${
+        isUser ? 'flex flex-col items-end' : ''
+      }`}>
+        <div className={`p-3 rounded-lg text-sm ${
+          isUser 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted border border-border'
+        }`}>
+          {!isUser && isStreaming ? (
+            <StreamingText 
+              text={message.content} 
+              onComplete={onStreamingComplete}
+            />
+                     ) : (
+             <TextWithCodeBlocks text={message.content} />
+           )}
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {message.timestamp instanceof Date 
+              ? message.timestamp.toLocaleTimeString()
+              : new Date(message.timestamp).toLocaleTimeString()
+            }
+          </span>
+          {message.context && (
+            <Badge variant="secondary" className="text-xs">
+              {getContextIcon(message.context)}
+              <span className="ml-1">{message.context}</span>
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {isUser && (
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-secondary text-secondary-foreground">
+            <User className="h-4 w-4" />
+          </AvatarFallback>
+        </Avatar>
+      )}
+    </div>
+  );
+};
+
+// Simple typing indicator
+const TypingIndicator = () => {
+  return (
+    <div className="flex gap-3 justify-start">
+      <Avatar className="h-8 w-8">
+        <AvatarFallback className="bg-primary text-primary-foreground">
+          <Bot className="h-4 w-4" />
+        </AvatarFallback>
+      </Avatar>
+      <div className="bg-muted border border-border p-3 rounded-lg">
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          AI is thinking...
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ChatInterface = ({ currentMode }: ChatInterfaceProps) => {
   const { messages, addMessage, setCode, mode, chatPanelWidth, setChatPanelWidth } = useAppStore();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   // Resizing logic
   const [isResizing, setIsResizing] = useState(false);
@@ -60,8 +310,48 @@ export const ChatInterface = ({ currentMode }: ChatInterfaceProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+
+
   const generateCodeFromPrompt = (prompt: string) => {
     const lowerPrompt = prompt.toLowerCase();
+    
+    if (lowerPrompt.includes('python') || lowerPrompt.includes('py')) {
+      return `# Python code generated based on your request
+import requests
+import json
+from typing import Dict, List, Optional
+
+def process_data(data: List[Dict]) -> Dict:
+    """
+    Process a list of data items and return aggregated results.
+    
+    Args:
+        data: List of dictionaries containing data
+        
+    Returns:
+        Dictionary with processed results
+    """
+    if not data:
+        return {"error": "No data provided"}
+    
+    try:
+        # Process the data
+        total_items = len(data)
+        processed_data = {
+            "total_items": total_items,
+            "processed": True,
+            "timestamp": "2024-01-01T00:00:00Z"
+        }
+        
+        return processed_data
+    except Exception as e:
+        return {"error": f"Processing failed: {str(e)}"}
+
+# Example usage
+sample_data = [{"id": 1, "name": "Item 1"}, {"id": 2, "name": "Item 2"}]
+result = process_data(sample_data)
+print("Result:", result)`;
+    }
     
     if (lowerPrompt.includes('react component')) {
       return `import React from 'react';
@@ -152,32 +442,114 @@ yourFunction();`;
       currentInput.toLowerCase().includes('code')
     );
 
-    // Simulate AI response
+    // Generate AI response
+    let aiResponse = getAIResponse(currentInput, currentMode);
+    
+    // If it's a code request, generate and update code
+    if (isCodeRequest) {
+      const generatedCode = generateCodeFromPrompt(currentInput);
+      setCode(generatedCode);
+      aiResponse = `I've generated code based on your request and updated the editor. The code includes:\n\n${currentInput}\n\nYou can now run or modify it as needed!`;
+    }
+
+    // Add AI message with streaming
     setTimeout(() => {
-      let aiResponse = getAIResponse(currentInput, currentMode);
-      
-      // If it's a code request, generate and update code
-      if (isCodeRequest) {
-        const generatedCode = generateCodeFromPrompt(currentInput);
-        setCode(generatedCode);
-        aiResponse = `I've generated code based on your request and updated the editor. The code includes:\n\n${currentInput}\n\nYou can now run or modify it as needed!`;
-      }
+      const messageId = Date.now().toString();
+      lastMessageIdRef.current = messageId;
       
       addMessage({
         type: 'ai',
         content: aiResponse,
         context: currentMode === 'code' ? 'code' : 'visual'
-      });
-      
+      }, messageId);
+
+      setStreamingMessageId(messageId);
       setIsTyping(false);
-    }, 1500);
+    }, 500);
   };
 
   const getAIResponse = (userInput: string, mode: 'code' | 'visual'): string => {
     if (mode === 'code') {
-      return `I understand you want to work with code. Based on your request "${userInput}", I can help you create, modify, or debug code. Let me generate some suggestions for you.`;
+      return `I understand you want to work with code. Based on your request "${userInput}", I can help you create, modify, or debug code. Let me generate some suggestions for you.
+
+Here's a sample Python function that demonstrates some common patterns:
+
+\`\`\`python
+def process_data(data_list):
+    """
+    Process a list of data items and return statistics.
+    
+    Args:
+        data_list (list): List of numeric values
+        
+    Returns:
+        dict: Dictionary containing min, max, average, and sum
+    """
+    if not data_list:
+        return {"error": "Empty list provided"}
+    
+    try:
+        # Calculate statistics
+        min_val = min(data_list)
+        max_val = max(data_list)
+        avg_val = sum(data_list) / len(data_list)
+        total_sum = sum(data_list)
+        
+        return {
+            "min": min_val,
+            "max": max_val,
+            "average": round(avg_val, 2),
+            "sum": total_sum,
+            "count": len(data_list)
+        }
+    except Exception as e:
+        return {"error": f"Processing failed: {str(e)}"}
+
+# Example usage
+sample_data = [10, 20, 30, 40, 50]
+result = process_data(sample_data)
+print("Statistics:", result)
+\`\`\`
+
+This function shows error handling, documentation, and data processing patterns. You can modify it based on your specific needs!`;
     } else {
-      return `I see you're working in visual mode. For "${userInput}", I can help you create flow diagrams, add nodes, or modify the visual structure of your project.`;
+      return `I see you're working in visual mode. For "${userInput}", I can help you create flow diagrams, add nodes, or modify the visual structure of your project.
+
+Here's a sample Python script for creating a simple data visualization:
+
+\`\`\`python
+import matplotlib.pyplot as plt
+import numpy as np
+
+def create_simple_chart():
+    """Create a simple bar chart using matplotlib."""
+    
+    # Sample data
+    categories = ['A', 'B', 'C', 'D', 'E']
+    values = [23, 45, 56, 78, 32]
+    
+    # Create the chart
+    plt.figure(figsize=(10, 6))
+    plt.bar(categories, values, color='skyblue', edgecolor='navy')
+    
+    # Customize the chart
+    plt.title('Sample Data Visualization', fontsize=16, fontweight='bold')
+    plt.xlabel('Categories', fontsize=12)
+    plt.ylabel('Values', fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
+    
+    # Add value labels on bars
+    for i, v in enumerate(values):
+        plt.text(i, v + 1, str(v), ha='center', va='bottom')
+    
+    plt.tight_layout()
+    plt.show()
+
+# Run the visualization
+create_simple_chart()
+\`\`\`
+
+This script demonstrates basic data visualization with matplotlib. You can adapt it for your visual workflow needs!`;
     }
   };
 
@@ -203,6 +575,10 @@ yourFunction();`;
     }
   };
 
+  const handleStreamingComplete = () => {
+    setStreamingMessageId(null);
+  };
+
   return (
     <div 
       className="h-full flex flex-col bg-card relative"
@@ -223,6 +599,7 @@ yourFunction();`;
         <div className="w-1 h-8 bg-transparent rounded-full group-hover: transition-colors absolute left-1/2 -translate-x-1/2" />
         <GripVertical className="h-2 w-2 text-muted-foreground relative z-10" />
       </div>
+      
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-3">
@@ -251,70 +628,19 @@ yourFunction();`;
               </div>
             </div>
           ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.type === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {message.type === 'ai' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                
-                <div className={`max-w-[80%] space-y-1 ${
-                  message.type === 'user' ? 'flex flex-col items-end' : ''
-                }`}>
-                  <div className={`p-3 rounded-lg text-sm ${
-                    message.type === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted border border-border'
-                  }`}>
-                    {message.content}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{message.timestamp.toLocaleTimeString()}</span>
-                    {message.context && (
-                      <Badge variant="secondary" className="text-xs">
-                        {getContextIcon(message.context)}
-                        <span className="ml-1">{message.context}</span>
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {message.type === 'user' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-secondary text-secondary-foreground">
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))
-          )}
-          
-          {isTyping && (
-            <div className="flex gap-3 justify-start">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-muted border border-border p-3 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                </div>
-              </div>
+            <div>
+              {messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isStreaming={streamingMessageId === message.id}
+                  onStreamingComplete={handleStreamingComplete}
+                />
+              ))}
             </div>
           )}
+          
+          {isTyping && <TypingIndicator />}
         </div>
         <div ref={messagesEndRef} />
       </ScrollArea>

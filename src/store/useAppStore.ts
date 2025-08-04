@@ -50,7 +50,7 @@ interface AppState {
   setCodeStatus: (status: CodeStatus) => void;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
-  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  addMessage: (message: Omit<Message, 'id' | 'timestamp'>, customId?: string) => void;
   addLog: (log: Omit<LogEntry, 'id' | 'timestamp'>) => void;
   clearLogs: () => void;
   setLogsOpen: (open: boolean) => void;
@@ -123,10 +123,10 @@ console.log(user);`,
 
       setEdges: (edges) => set({ edges }),
 
-      addMessage: (message) => set((state) => ({
+      addMessage: (message, customId?: string) => set((state) => ({
         messages: [...state.messages, {
           ...message,
-          id: Date.now().toString(),
+          id: customId || Date.now().toString(),
           timestamp: new Date()
         }]
       })),
@@ -179,7 +179,20 @@ console.log(user);`,
         messages: state.messages,
         logsPanelHeight: state.logsPanelHeight,
         chatPanelWidth: state.chatPanelWidth
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Convert timestamp strings back to Date objects
+          state.messages = state.messages.map(message => ({
+            ...message,
+            timestamp: new Date(message.timestamp)
+          }));
+          state.logs = state.logs.map(log => ({
+            ...log,
+            timestamp: new Date(log.timestamp)
+          }));
+        }
+      }
     }
   )
 );
